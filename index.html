@@ -5,77 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Expenses</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
-<style>
-  body {
-    margin: 0;
-    font-family: sans-serif;
-    background: #111;
-    color: #eee;
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-    font-size: 1.2rem;
-    align-items: flex-start;
-  }
-
-  h1 {
-    cursor: pointer;
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-  }
-
-  select, input {
-    background: #222;
-    color: #eee;
-    border: none;
-    padding: 0.5rem;
-    font-size: 1.2rem;
-    margin: 0.5rem 0;
-  }
-
-  .expenses {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    width: 100%;
-  }
-
-  .expense-group {
-    margin-bottom: 1rem;
-  }
-
-  .expense-date {
-    color: #888;
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.25rem;
-    border-bottom: 1px solid #333;
-  }
-
-  .expense {
-    padding: 0.5rem 0;
-    font-size: 1.5rem;
-    position: relative;
-    cursor: pointer;
-  }
-
-  .expense.editing::after {
-    content: 'x';
-    color: red;
-    position: absolute;
-    top: -0.5rem;
-    right: -0.5rem;
-    cursor: pointer;
-  }
-
-  .total {
-    margin: 1rem 0;
-    font-size: 2rem;
-  }
-
-  .hidden { display: none; }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
