@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Expenses</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyD6MmrZtOZDmsnrzLVnqHmCDJwvRiYH3zQ",
+  authDomain: "save-log.firebaseapp.com",
+  databaseURL: "https://save-log-default-rtdb.firebaseio.com",
+  projectId: "save-log",
+  storageBucket: "save-log.firebasestorage.app",
+  messagingSenderId: "202094279515",
+  appId: "1:202094279515:web:d1ffa8011b204ddd45387e"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+</script>
 <style>
   body {
     margin: 0;
@@ -96,7 +111,12 @@
 <div class="expenses" id="expenses"></div>
 
 <script>
-let expensesData = JSON.parse(localStorage.getItem('expenses') || '{}');
+let expensesData = {};
+
+db.ref('expenses').once('value').then(snapshot => {
+  expensesData = snapshot.val() || {};
+  loadExpenses();
+});
 const monthSelect = document.getElementById('monthSelect');
 const expensesDiv = document.getElementById('expenses');
 const totalDiv = document.getElementById('total');
@@ -121,7 +141,8 @@ months.forEach((m, i) => {
 });
 
 function saveExpenses() {
-  localStorage.setItem('expenses', JSON.stringify(expensesData));
+  localStorage.setItem('expenses', JSON.stringify(expensesData)); // optional local backup
+  db.ref('expenses').set(expensesData);
 }
 
 function loadExpenses() {
@@ -237,6 +258,16 @@ function exportData() {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD6MmrZtOZDmsnrzLVnqHmCDJwvRiYH3zQ",
+  authDomain: "save-log.firebaseapp.com",
+  databaseURL: "https://save-log-default-rtdb.firebaseio.com",
+  projectId: "save-log",
+  storageBucket: "save-log.firebasestorage.app",
+  messagingSenderId: "202094279515",
+  appId: "1:202094279515:web:d1ffa8011b204ddd45387e"
+};
 
 function importData(event) {
   const file = event.target.files[0];
