@@ -46,6 +46,18 @@ db.ref('expenses').once('value').then(snapshot => {
   loadExpenses();
 });
 
+function fetchAndLoadExpenses() {
+  db.ref('expenses').once('value').then(snapshot => {
+    expensesData = snapshot.val() || {};
+    updateMonthSelect();
+    currentMonth = monthSelect.value;
+    loadExpenses(); // only after cloud data arrived
+  }).catch(() => {
+    expensesData = {};
+    updateMonthSelect();
+    loadExpenses();
+  });
+}
 
 const monthSelect = document.getElementById('monthSelect');
 const expensesDiv = document.getElementById('expenses');
@@ -202,7 +214,8 @@ function importData(event) {
   reader.readAsText(file);
 }
 
-loadExpenses();
+fetchAndLoadExpenses();
+
 </script>
 
 </body>
