@@ -13,10 +13,12 @@ const firebaseConfig = {
   authDomain: "savelog-3f29f.firebaseapp.com",
   databaseURL: "https://savelog-3f29f-default-rtdb.firebaseio.com",
   projectId: "savelog-3f29f",
-  storageBucket: "savelog-3f29f.firebasestorage.app",
+  storageBucket: "savelog-3f29f.appspot.com",
   messagingSenderId: "858364008456",
   appId: "1:858364008456:web:b021827fd90120d8f2d9bd"
 };
+
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 </script>
@@ -32,13 +34,11 @@ const db = firebase.database();
     font-size: 1.2rem;
     align-items: flex-start;
   }
-
   h1 {
     cursor: pointer;
     font-size: 2rem;
     margin-bottom: 0.5rem;
   }
-
   select, input {
     background: #222;
     color: #eee;
@@ -47,7 +47,6 @@ const db = firebase.database();
     font-size: 1.2rem;
     margin: 0.5rem 0;
   }
-
   .expenses {
     display: flex;
     flex-direction: column;
@@ -55,11 +54,9 @@ const db = firebase.database();
     margin-top: 1rem;
     width: 100%;
   }
-
   .expense-group {
     margin-bottom: 1rem;
   }
-
   .expense-date {
     color: #888;
     font-size: 1rem;
@@ -67,14 +64,12 @@ const db = firebase.database();
     padding-bottom: 0.25rem;
     border-bottom: 1px solid #333;
   }
-
   .expense {
     padding: 0.5rem 0;
     font-size: 1.5rem;
     position: relative;
     cursor: pointer;
   }
-
   .expense.editing::after {
     content: 'x';
     color: red;
@@ -83,12 +78,10 @@ const db = firebase.database();
     right: -0.5rem;
     cursor: pointer;
   }
-
   .total {
     margin: 1rem 0;
     font-size: 2rem;
   }
-
   .hidden { display: none; }
 </style>
 </head>
@@ -99,7 +92,7 @@ const db = firebase.database();
 <div id="menu" class="hidden">
   <button onclick="goHome()">Home</button>
   <button onclick="exportData()">Export Data</button>
-  <input type="file" onchange="importData(event)">
+  <input type="file" id="importFile" accept=".txt,.json" onchange="importData(event)">
 </div>
 
 <select id="monthSelect" onchange="loadExpenses()"></select>
@@ -111,94 +104,121 @@ const db = firebase.database();
 <div class="expenses" id="expenses"></div>
 
 <script>
+// Global variables
 let expensesData = {};
+let editingIndex = -1;
 
-
+// DOM elements
 const monthSelect = document.getElementById('monthSelect');
 const expensesDiv = document.getElementById('expenses');
 const totalDiv = document.getElementById('total');
 const input = document.getElementById('amountInput');
 const menu = document.getElementById('menu');
+const importFile = document.getElementById('importFile');
 
+// Month names
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
+// Initialize with current month
 const now = new Date();
 let currentMonth = `${months[now.getMonth()]}${now.getFullYear()}`;
 
-months.forEach((m, i) => {
-  const key = `${m}${now.getFullYear()}`;
-  const option = document.createElement('option');
-  option.value = key;
-  option.text = `${m} ${now.getFullYear()}`;
-  if (key === currentMonth) option.selected = true;
-  monthSelect.appendChild(option);
-});
-db.ref('expenses').once('value').then(snapshot => {
-  console.log('Firebase data:', snapshot.val()); // Add this line
-  expensesData = snapshot.val() || {};
-  updateMonthSelect();
-  loadExpenses();
-});
-  }).catch(error => {
-  console.error('Firebase error:', error);
-  // Fallback to local storage
-  const localData = localStorage.getItem('expenses');
-  expensesData = localData ? JSON.parse(localData) : {};
-  updateMonthSelect();
-  loadExpenses();
-});
-if (!snapshot.exists()) {
-  db.ref('expenses').set({});
-  expensesData = {};
-} else {
-  expensesData = snapshot.val();
-}
-  
-  function saveExpenses() {
-  localStorage.setItem('expenses', JSON.stringify(expensesData)); // optional local backup
-  db.ref('expenses').set(expensesData);
+// Initialize month dropdown
+function initMonthSelect() {
+  monthSelect.innerHTML = '';
+  months.forEach((m, i) => {
+    const key = `${m}${now.getFullYear()}`;
+    const option = document.createElement('option');
+    option.value = key;
+    option.text = `${m} ${now.getFullYear()}`;
+    if (key === currentMonth) option.selected = true;
+    monthSelect.appendChild(option);
+  });
 }
 
+// Load data from Firebase
+function loadFirebaseData() {
+  db.ref('expenses').once('value').then(snapshot => {
+    console.log('Firebase data loaded:', snapshot.val());
+    
+    if (!snapshot.exists()) {
+      console.log('No data found, initializing empty database');
+      expensesData = {};
+      db.ref('expenses').set({});
+    } else {
+      expensesData = snapshot.val() || {};
+    }
+    
+    updateMonthSelect();
+    loadExpenses();
+  }).catch(error => {
+    console.error('Firebase error:', error);
+    fallbackToLocalStorage();
+  });
+}
+
+// Fallback to local storage if Firebase fails
+function fallbackToLocalStorage() {
+  const localData = localStorage.getItem('expenses');
+  if (localData) {
+    console.log('Using local storage data');
+    expensesData = JSON.parse(localData);
+  } else {
+    console.log('No local data found, starting fresh');
+    expensesData = {};
+  }
+  updateMonthSelect();
+  loadExpenses();
+}
+
+// Save data to both Firebase and local storage
+function saveExpenses() {
+  console.log('Saving data:', expensesData);
+  localStorage.setItem('expenses', JSON.stringify(expensesData));
+  db.ref('expenses').set(expensesData).catch(error => {
+    console.error('Error saving to Firebase:', error);
+  });
+}
+
+// Main function to load and display expenses
 function loadExpenses() {
   currentMonth = monthSelect.value;
   expensesDiv.innerHTML = '';
   const monthData = expensesData[currentMonth] || [];
   let total = 0;
 
-  // Group expenses by date
+  // Group by date
   const groupedExpenses = {};
   monthData.forEach(expense => {
     const date = new Date(expense.date);
     const dateKey = date.toDateString();
-    if (!groupedExpenses[dateKey]) {
-      groupedExpenses[dateKey] = [];
-    }
+    groupedExpenses[dateKey] = groupedExpenses[dateKey] || [];
     groupedExpenses[dateKey].push(expense);
   });
 
   // Sort dates (newest first)
   const sortedDates = Object.keys(groupedExpenses).sort((a, b) => new Date(b) - new Date(a));
 
+  // Display each date group
   sortedDates.forEach(dateKey => {
     const date = new Date(dateKey);
     const dateStr = `${date.getDate()} ${months[date.getMonth()]}`;
     
-    // Create date group container
     const groupDiv = document.createElement('div');
     groupDiv.className = 'expense-group';
     
-    // Add date heading
     const dateHeading = document.createElement('div');
     dateHeading.className = 'expense-date';
     dateHeading.textContent = dateStr;
     groupDiv.appendChild(dateHeading);
 
-    // Add expenses for this date
+    // Add each expense for this date
     groupedExpenses[dateKey].forEach((expense, idx) => {
-      const originalIndex = monthData.findIndex(e => e.date === expense.date && e.amount === expense.amount);
+      const originalIndex = monthData.findIndex(e => 
+        e.date === expense.date && e.amount === expense.amount);
       
       const div = document.createElement('div');
       div.className = editingIndex === originalIndex ? 'expense editing' : 'expense';
@@ -215,23 +235,30 @@ function loadExpenses() {
   totalDiv.textContent = `Total: ₹${total}`;
 }
 
-let editingIndex = -1;
-
+// Handle keyboard input
 function handleKey(e) {
-  if (e.key === 'Enter') addExpense();
+  if (e.key === 'Enter') {
+    addExpense();
+  }
 }
 
+// Add or update expense
 function addExpense() {
   const val = input.value.trim();
-  if (!val) return;
+  if (!val || isNaN(val)) {
+    alert('Please enter a valid number');
+    return;
+  }
 
   expensesData[currentMonth] = expensesData[currentMonth] || [];
 
   if (editingIndex >= 0) {
+    // Update existing
     expensesData[currentMonth][editingIndex].amount = val;
     expensesData[currentMonth][editingIndex].date = new Date().toISOString();
     editingIndex = -1;
   } else {
+    // Add new
     expensesData[currentMonth].push({
       amount: val,
       date: new Date().toISOString()
@@ -241,17 +268,29 @@ function addExpense() {
   saveExpenses();
   input.value = '';
   loadExpenses();
+  input.focus();
 }
-function updateMonthSelect(){
+
+// Update month dropdown with available data
+function updateMonthSelect() {
   monthSelect.innerHTML = '';
-  Object.keys(expensesData).sort().reverse().forEach(key=>{
+  const allMonths = Object.keys(expensesData).sort().reverse();
+  
+  if (allMonths.length === 0) {
+    initMonthSelect();
+    return;
+  }
+
+  allMonths.forEach(key => {
     const option = document.createElement('option');
     option.value = key;
-    option.text = key.match(/[A-Za-z]+/) + ' ' + key.match(/[0-9]+/);
-    if(key===currentMonth) option.selected = true;
+    option.text = key.replace(/([A-Za-z]+)(\d+)/, '$1 $2');
+    if (key === currentMonth) option.selected = true;
     monthSelect.appendChild(option);
   });
 }
+
+// Edit or delete expense
 function editExpense(idx) {
   if (editingIndex === idx) {
     if (confirm('Delete this expense?')) {
@@ -264,9 +303,11 @@ function editExpense(idx) {
     input.value = expensesData[currentMonth][idx].amount;
     editingIndex = idx;
     loadExpenses();
+    input.focus();
   }
 }
 
+// UI functions
 function showMenu() {
   menu.classList.toggle('hidden');
 }
@@ -276,16 +317,16 @@ function goHome() {
 }
 
 function exportData() {
-  const blob = new Blob([JSON.stringify(expensesData)], {type: 'text/plain'});
+  const blob = new Blob([JSON.stringify(expensesData, null, 2)], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'expenses.txt';
+  a.download = `expenses_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
-
 
 function importData(event) {
   const file = event.target.files[0];
@@ -293,13 +334,28 @@ function importData(event) {
 
   const reader = new FileReader();
   reader.onload = function(e) {
-    expensesData = JSON.parse(e.target.result);
-    saveExpenses();
-    loadExpenses();
-  }
+    try {
+      const importedData = JSON.parse(e.target.result);
+      if (typeof importedData === 'object' && importedData !== null) {
+        if (confirm('Replace all current data with imported data?')) {
+          expensesData = importedData;
+          saveExpenses();
+          loadExpenses();
+        }
+      } else {
+        alert('Invalid data format');
+      }
+    } catch (err) {
+      alert('Error parsing file: ' + err.message);
+    }
+    importFile.value = ''; // Reset file input
+  };
   reader.readAsText(file);
 }
 
+// Initialize app
+initMonthSelect();
+loadFirebaseData();
 </script>
 
 </body>
