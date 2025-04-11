@@ -31,20 +31,15 @@
 <script>
 let expensesData = {};
 
-db.ref('expenses').on('value', snapshot => {
+db.ref('expenses').once('value').then(snapshot => {
   expensesData = snapshot.val() || {};
   updateMonthSelect();
-
-  // ensure correct currentMonth always
-  if (!expensesData[currentMonth]) {
-    currentMonth = Object.keys(expensesData).sort().reverse()[0] || currentMonth;
-    monthSelect.value = currentMonth;
-  }
-
+  loadExpenses();
+}).catch(() => {
+  expensesData = JSON.parse(localStorage.getItem('expenses') || '{}');
+  updateMonthSelect();
   loadExpenses();
 });
-
-
 
 const monthSelect = document.getElementById('monthSelect');
 const expensesDiv = document.getElementById('expenses');
@@ -201,6 +196,7 @@ function importData(event) {
   reader.readAsText(file);
 }
 
+loadExpenses();
 </script>
 
 </body>
