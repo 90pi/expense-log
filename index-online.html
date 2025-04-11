@@ -31,15 +31,21 @@
 <script>
 let expensesData = {};
 
+// Fetch fresh from Firebase first
 db.ref('expenses').once('value').then(snapshot => {
   expensesData = snapshot.val() || {};
+
   updateMonthSelect();
-  loadExpenses();
+  currentMonth = monthSelect.value;
+  
+  loadExpenses(); // This now loads ONLY cloud data directly
 }).catch(() => {
-  expensesData = JSON.parse(localStorage.getItem('expenses') || '{}');
+  // Optional fallback if Firebase fails
+  expensesData = {};
   updateMonthSelect();
   loadExpenses();
 });
+
 
 const monthSelect = document.getElementById('monthSelect');
 const expensesDiv = document.getElementById('expenses');
