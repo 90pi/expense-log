@@ -31,33 +31,15 @@
 <script>
 let expensesData = {};
 
-// Fetch fresh from Firebase first
 db.ref('expenses').once('value').then(snapshot => {
   expensesData = snapshot.val() || {};
-
   updateMonthSelect();
-  currentMonth = monthSelect.value;
-  
-  loadExpenses(); // This now loads ONLY cloud data directly
+  loadExpenses();
 }).catch(() => {
-  // Optional fallback if Firebase fails
-  expensesData = {};
+  expensesData = JSON.parse(localStorage.getItem('expenses') || '{}');
   updateMonthSelect();
   loadExpenses();
 });
-
-function fetchAndLoadExpenses() {
-  db.ref('expenses').once('value').then(snapshot => {
-    expensesData = snapshot.val() || {};
-    updateMonthSelect();
-    currentMonth = monthSelect.value;
-    loadExpenses(); // only after cloud data arrived
-  }).catch(() => {
-    expensesData = {};
-    updateMonthSelect();
-    loadExpenses();
-  });
-}
 
 const monthSelect = document.getElementById('monthSelect');
 const expensesDiv = document.getElementById('expenses');
@@ -214,8 +196,7 @@ function importData(event) {
   reader.readAsText(file);
 }
 
-fetchAndLoadExpenses();
-
+loadExpenses();
 </script>
 
 </body>
