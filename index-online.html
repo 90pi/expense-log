@@ -31,15 +31,12 @@
 <script>
 let expensesData = {};
 
-db.ref('expenses').once('value').then(snapshot => {
+db.ref('expenses').on('value', snapshot => {
   expensesData = snapshot.val() || {};
   updateMonthSelect();
   loadExpenses();
-}).catch(() => {
-  expensesData = JSON.parse(localStorage.getItem('expenses') || '{}');
-  updateMonthSelect();
-  loadExpenses();
 });
+
 
 const monthSelect = document.getElementById('monthSelect');
 const expensesDiv = document.getElementById('expenses');
