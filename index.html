@@ -115,6 +115,7 @@ let expensesData = {};
 
 db.ref('expenses').once('value').then(snapshot => {
   expensesData = snapshot.val() || {};
+  updateMonthSelect();
   loadExpenses();
 });
 const monthSelect = document.getElementById('monthSelect');
@@ -225,7 +226,16 @@ function addExpense() {
   input.value = '';
   loadExpenses();
 }
-
+function updateMonthSelect(){
+  monthSelect.innerHTML = '';
+  Object.keys(expensesData).sort().reverse().forEach(key=>{
+    const option = document.createElement('option');
+    option.value = key;
+    option.text = key.match(/[A-Za-z]+/) + ' ' + key.match(/[0-9]+/);
+    if(key===currentMonth) option.selected = true;
+    monthSelect.appendChild(option);
+  });
+}
 function editExpense(idx) {
   if (editingIndex === idx) {
     if (confirm('Delete this expense?')) {
