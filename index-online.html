@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Expenses</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-<script src="firebase-config.js"></script>
 <link rel="stylesheet" href="style.css">
+<!-- Add Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
 
-<h1 onclick="showMenu()">Expense Tracker - Online</h1>
+<h1 onclick="showMenu()">Expense Tracker</h1>
 
 <div id="menu" class="hidden">
   <button onclick="goHome()">Home</button>
@@ -29,18 +29,22 @@
 <div class="expenses" id="expenses"></div>
 
 <script>
+// Your Firebase configuration (replace with your actual config)
+const firebaseConfig = {
+  apiKey: "AIzaSyCUcge8_Ax1VPLpT8bEaYeJBUH490fwmfw",
+  authDomain: "savelog-3f29f.firebaseapp.com",
+  databaseURL: "https://savelog-3f29f-default-rtdb.firebaseio.com",
+  projectId: "savelog-3f29f",
+  storageBucket: "savelog-3f29f.firebasestorage.app",
+  messagingSenderId: "858364008456",
+  appId: "1:858364008456:web:b021827fd90120d8f2d9bd"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
 let expensesData = {};
-
-db.ref('expenses').once('value').then(snapshot => {
-  expensesData = snapshot.val() || {};
-  updateMonthSelect();
-  loadExpenses();
-}).catch(() => {
-  expensesData = JSON.parse(localStorage.getItem('expenses') || '{}');
-  updateMonthSelect();
-  loadExpenses();
-});
-
 const monthSelect = document.getElementById('monthSelect');
 const expensesDiv = document.getElementById('expenses');
 const totalDiv = document.getElementById('total');
@@ -65,11 +69,27 @@ months.forEach((m, i) => {
 });
 
 function saveExpenses() {
-  localStorage.setItem('expenses', JSON.stringify(expensesData)); // optional local backup
-  db.ref('expenses').set(expensesData);
+  // Save to Firebase instead of local storage
+  database.ref('expenses').set(expensesData)
+    .then(() => console.log("Data saved successfully"))
+    .catch((error) => console.error("Error saving data: ", error));
 }
 
 function loadExpenses() {
+  // Load from Firebase
+  database.ref('expenses').once('value')
+    .then((snapshot) => {
+      expensesData = snapshot.val() || {};
+      renderExpenses();
+    })
+    .catch((error) => {
+      console.error("Error loading data: ", error);
+      expensesData = {};
+      renderExpenses();
+    });
+}
+
+function renderExpenses() {
   currentMonth = monthSelect.value;
   expensesDiv.innerHTML = '';
   const monthData = expensesData[currentMonth] || [];
@@ -196,6 +216,7 @@ function importData(event) {
   reader.readAsText(file);
 }
 
+// Initialize the app
 loadExpenses();
 </script>
 
