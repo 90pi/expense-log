@@ -9,7 +9,12 @@
 </head>
 <body>
 
-<h1>Expense Tracker</h1>
+<h1 onclick="showMenu()">Expense Tracker</h1>
+<div id="menu" class="hidden">
+  <button onclick="exportData()">Export Data</button>
+  <input type="file" id="importFile" accept=".json" style="display: none" onchange="importData(event)">
+  <button onclick="document.getElementById('importFile').click()">Import Data</button>
+</div>
 
 <div class="controls">
   <select id="monthSelect" onchange="loadExpenses()"></select>
