@@ -73,14 +73,48 @@ const todayStr = now.toISOString().substring(0,10);
 entryDateEl.value = todayStr;
 entryDateEl.max = todayStr;
 
-// Build month selector – here we include the current month only.
-// (If more months exist in your data, you may enhance this.)
-let currentMonth = `${months[now.getMonth()]}${now.getFullYear()}`;
-const option = document.createElement('option');
-option.value = currentMonth;
-option.text = `${months[now.getMonth()]} ${now.getFullYear()}`;
-option.selected = true;
-monthSelect.appendChild(option);
+// ... (previous code remains the same until the monthSelect part)
+
+// Build month selector - now including all months that have data
+function updateMonthSelector() {
+  // Clear existing options
+  monthSelect.innerHTML = '';
+  
+  // Get all months that have data
+  const dataMonths = Object.keys(expensesData);
+  
+  // Also include current month even if empty
+  const currentMonthKey = `${months[now.getMonth()]}${now.getFullYear()}`;
+  if (!dataMonths.includes(currentMonthKey)) {
+    dataMonths.push(currentMonthKey);
+  }
+  
+  // Sort months chronologically (newest first)
+  dataMonths.sort((a, b) => {
+    // Extract month and year from keys like "June2025"
+    const getDate = (key) => {
+      const month = months.findIndex(m => key.startsWith(m));
+      const year = parseInt(key.replace(months[month], ''));
+      return new Date(year, month);
+    };
+    return getDate(b) - getDate(a);
+  });
+  
+  // Add options to select
+  dataMonths.forEach(monthKey => {
+    // Extract month name and year from key
+    const monthName = months.find(m => monthKey.startsWith(m));
+    const year = monthKey.replace(monthName, '');
+    
+    const option = document.createElement('option');
+    option.value = monthKey;
+    option.text = `${monthName} ${year}`;
+    monthSelect.appendChild(option);
+  });
+  
+  // Select current month by default
+  monthSelect.value = currentMonthKey;
+}
 
 function saveExpenses() {
   localStorage.setItem('expenses', JSON.stringify(expensesData));
@@ -274,7 +308,10 @@ function importData(event) {
   reader.readAsText(file);
 }
 
+// Initialize
+updateMonthSelector();
 loadExpenses();
+
 </script>
 </body>
 </html>
